@@ -8,20 +8,25 @@
 #include <cstdio>
 #include <memory>
 #include <algorithm>
+#include <vector>
 
-#define FLUSH_PATH "output_log.txt"
+
+struct log_message{
+    int priority;
+    std::shared_ptr<char> message;
+};
 
 class string_logger {
 private:
     uint32_t max_stored;
-    std::deque<std::shared_ptr<char>> str_log;
+    std::deque<log_message*> str_log;
     std::mutex mtx;
 
 public:
     string_logger(uint32_t size) : max_stored(size) {
     }
 
-    void insert(const char* event, ...) {
+    void insert(uint32_t priority, const char* event, ...) {
         va_list temp, args;
         va_start(args, event);
         va_copy(temp,args);
@@ -31,31 +36,38 @@ public:
         vsnprintf(buffer, ret+1 , event, args);
         va_end(args);
 
+        log_message *msg = new log_message;
+        msg->priority = priority;
+        msg->message = std::shared_ptr<char>(buffer);
 
         std::lock_guard<std::mutex> lock(mtx);
         if(str_log.size() == max_stored) {
             str_log.pop_back();
         }
-        str_log.push_front(std::shared_ptr<char>(buffer));
+        str_log.push_front(msg);
 
     }
 
-    std::vector<std::shared_ptr<char>> get_last_n(int n_strings) {
+    std::vector<std::shared_ptr<char>> tail(int n_strings, int priority = 0) {
         std::vector<std::shared_ptr<char>> last_n_strings;
         if (n_strings < static_cast<int>(str_log.size())) {
             std::lock_guard<std::mutex> lock(mtx);
             for(int i = n_strings - 1; i >= 0; --i) {
-                std::cout << "Pushing:" << str_log[i];
-                last_n_strings.push_back(str_log[i]);
+                if(priority == 0){
+                    last_n_strings.push_back(str_log[i]->message);
+                }
+                else if(str_log[i]->priority < priority){
+                    last_n_strings.push_back(str_log[i]->message);
+                }
             }
         }
         return last_n_strings;
     }
 
-    void flush_to_file() {
+    void flush_to_file(std::string ofile) {
         std::lock_guard<std::mutex> lock(mtx);
         std::ofstream outfile;
-        outfile.open(FLUSH_PATH, std::ios::ate | std::ios::out);
+        outfile.open(ofile, std::ios::ate | std::ios::out);
         while (!str_log.empty()) {
             outfile << str_log.back() << "\n";
             str_log.pop_back();
