@@ -26,7 +26,7 @@ public:
     string_logger(uint32_t size) : max_stored(size) {
     }
 
-    void insert(uint32_t priority, const char* event, ...) {
+    void insert(uuint32_t priority, const char* event, ...) {
         va_list temp, args;
         va_start(args, event);
         va_copy(temp,args);
@@ -48,15 +48,13 @@ public:
 
     }
 
-    std::vector<std::shared_ptr<char>> tail(int n_strings, int priority = 0) {
+    std::vector<std::shared_ptr<char>> tail(uint32_t n_strings, uint32_t priority = 0) {
         std::vector<std::shared_ptr<char>> last_n_strings;
         if (n_strings < static_cast<int>(str_log.size())) {
+            priority = (priority) ? priority : UINT32_MAX;
             std::lock_guard<std::mutex> lock(mtx);
             for(int i = n_strings - 1; i >= 0; --i) {
-                if(priority == 0){
-                    last_n_strings.push_back(str_log[i].message);
-                }
-                else if(str_log[i].priority < priority){
+                if(str_log[i].priority < priority){
                     last_n_strings.push_back(str_log[i].message);
                 }
             }
