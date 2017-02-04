@@ -19,7 +19,7 @@ struct log_message{
 class string_logger {
 private:
     uint32_t max_stored;
-    std::deque<log_message*> str_log;
+    std::deque<log_message> str_log;
     std::mutex mtx;
 
 public:
@@ -36,9 +36,9 @@ public:
         vsnprintf(buffer, ret+1 , event, args);
         va_end(args);
 
-        log_message *msg = new log_message;
-        msg->priority = priority;
-        msg->message = std::shared_ptr<char>(buffer);
+        log_message msg;
+        msg.priority = priority;
+        msg.message = std::shared_ptr<char>(buffer);
 
         std::lock_guard<std::mutex> lock(mtx);
         if(str_log.size() == max_stored) {
@@ -54,10 +54,10 @@ public:
             std::lock_guard<std::mutex> lock(mtx);
             for(int i = n_strings - 1; i >= 0; --i) {
                 if(priority == 0){
-                    last_n_strings.push_back(str_log[i]->message);
+                    last_n_strings.push_back(str_log[i].message);
                 }
-                else if(str_log[i]->priority < priority){
-                    last_n_strings.push_back(str_log[i]->message);
+                else if(str_log[i].priority < priority){
+                    last_n_strings.push_back(str_log[i].message);
                 }
             }
         }
@@ -69,7 +69,7 @@ public:
         std::ofstream outfile;
         outfile.open(ofile, std::ios::ate | std::ios::out);
         while (!str_log.empty()) {
-            outfile << str_log.back() << "\n";
+            outfile << str_log.back().message << "\n";
             str_log.pop_back();
         }
         outfile.close();
