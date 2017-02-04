@@ -12,7 +12,7 @@
 
 
 struct log_message{
-    int priority;
+    uint32_t priority;
     std::shared_ptr<char> message;
 };
 
@@ -26,7 +26,7 @@ public:
     string_logger(uint32_t size) : max_stored(size) {
     }
 
-    void insert(uuint32_t priority, const char* event, ...) {
+    void insert(uint32_t priority, const char* event, ...) {
         va_list temp, args;
         va_start(args, event);
         va_copy(temp,args);
