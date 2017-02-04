@@ -50,7 +50,7 @@ public:
 
     std::vector<std::shared_ptr<char>> tail(uint32_t n_strings, uint32_t priority = 0) {
         std::vector<std::shared_ptr<char>> last_n_strings;
-        n_strings = n_strings < static_cast<uint32_t>(str_log.size()) ? n_strings : str_log.size();
+        n_strings = n_strings <= str_log.size() ? n_strings : str_log.size();
         priority = (priority) ? priority : UINT32_MAX;
 
         std::lock_guard<std::mutex> lock(mtx);
